@@ -1,0 +1,10 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - uri: http://localhost:9090
+          predicates:
+            - Path=/add-header/**
+          filters:
+            - StripPrefix=0
+            - AddMyCustomHeader
