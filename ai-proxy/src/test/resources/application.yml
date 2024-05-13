@@ -8,3 +8,13 @@ spring:
           filters:
             - StripPrefix=0
             - AddMyCustomHeader
+        - uri: http://localhost:9090
+          predicates:
+            - Path=/chat/**
+            - Header=x-llm, .*
+          filters:
+            - LLMProxy
+          metadata:
+            response-timeout: 200
+            connect-timeout: 200
+
