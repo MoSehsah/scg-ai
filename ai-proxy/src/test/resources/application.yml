@@ -14,7 +14,3 @@ spring:
             - Header=x-llm, .*
           filters:
             - LLMProxy
-          metadata:
-            response-timeout: 200
-            connect-timeout: 200
-
