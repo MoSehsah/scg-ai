@@ -1,4 +1,4 @@
-# Spring Cloud Gateway Extensions
+# Spring Cloud Gateway AI Extensions
 
 The Goal of this project is to provide a set of extensions to the Spring Cloud Gateway project.
 
