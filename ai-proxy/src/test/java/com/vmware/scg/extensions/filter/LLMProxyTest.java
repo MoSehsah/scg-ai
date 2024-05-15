@@ -17,14 +17,12 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.net.http.HttpResponse;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "50000")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-
 class LLMProxyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(LLMProxyTest.class);
 
@@ -49,7 +47,7 @@ class LLMProxyTest {
         String result = webTestClient.post()
                 .uri("/chat")
                 .header("x-llm", "ollama")
-                .bodyValue("Say hi!")
+                .bodyValue("Tell me a joke!")
                 .exchange()
                 .expectStatus()
                 .isOk().returnResult(String.class).getResponseBody().map(String::toString).blockLast();

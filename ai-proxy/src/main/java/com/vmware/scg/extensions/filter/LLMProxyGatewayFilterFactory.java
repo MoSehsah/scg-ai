@@ -14,12 +14,15 @@ import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 public class LLMProxyGatewayFilterFactory extends AbstractGatewayFilterFactory<LLMProxyGatewayFilterFactory.Config> {
@@ -48,20 +51,22 @@ public class LLMProxyGatewayFilterFactory extends AbstractGatewayFilterFactory<L
 
                     var ollamaApi = new OllamaApi();
                     var chatClient = new OllamaChatClient(ollamaApi).withDefaultOptions(OllamaOptions.create().withModel(OllamaOptions.DEFAULT_MODEL).withTemperature(0.9f));
-                    Flux<ChatResponse> chatResponse = chatClient.stream(new Prompt(request.getBody().toString()));
-//                    chatResponse.map(val -> val.getResult().getOutput().getContent()).subscribe(System.out::print);
-                    Flux<String> chatResponseString = chatResponse.map(val -> val.getResult().getOutput().getContent());
 
-                    response.getHeaders().set("Content-Type", "application/text");
-                    DataBufferFactory bufferFactory = response.bufferFactory();
-                    Publisher<DataBuffer> dataBufferPublisher = chatResponseString.map(str -> bufferFactory.wrap(str.getBytes()));
-                    return response.writeWith(dataBufferPublisher);
+                    return response.writeWith(request.getBody().map(dataBuffer -> {
+                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                        dataBuffer.read(bytes);
+                        DataBufferUtils.release(dataBuffer);
+                        String body = new String(bytes, StandardCharsets.UTF_8);
+                        LOGGER.info("Request body: " + body);
+                        Prompt prompt = new Prompt(body);
+                        ChatResponse chatResponse = chatClient.call(prompt);
+                        return response.bufferFactory().wrap(chatResponse.getResult().getOutput().getContent().getBytes());
+                    })
 
 
-//                    String responseString = "{\"response\": \"what is your model version?\"}";
-//                    response.setStatusCode(HttpStatus.OK);
-//                    response.getHeaders().add("Content-Type", "application/json");
-//                    return response.writeWith(Mono.just(responseString).map(str -> response.bufferFactory().wrap(str.getBytes())));
+
+                    );
+
 
 
                 } else if (selectedLLM.equals("gpt3")) {
