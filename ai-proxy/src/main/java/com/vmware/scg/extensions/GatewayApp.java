@@ -14,8 +14,11 @@ public class GatewayApp {
     public RouteLocator routes(RouteLocatorBuilder builder,
                                LLMProxyGatewayFilterFactory filterFactory) {
         return builder.routes()
-                .route("test_route", r -> r.path("/chat/**")
-                        .filters(f -> f.filters(filterFactory.apply(new LLMProxyGatewayFilterFactory.Config())))
+                .route("test_route", r -> r.path("/chat/**").and().header("x-llm", "ollama")
+                        .filters(f -> f.filters(filterFactory.apply(new LLMProxyGatewayFilterFactory.Config("ollama", 0.9f, ""))))
+                        .uri("http://localhost:9090"))
+                .route("test_route", r -> r.path("/chat/**").and().header("x-llm", "openai")
+                        .filters(f -> f.filters(filterFactory.apply(new LLMProxyGatewayFilterFactory.Config("openai", 0.9f, ""))))
                         .uri("http://localhost:9090"))
                 .build();
     }

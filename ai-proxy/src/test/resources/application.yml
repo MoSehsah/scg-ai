@@ -4,13 +4,20 @@ spring:
       routes:
         - uri: http://localhost:9090
           predicates:
-            - Path=/add-header/**
+            - Path=/chat/**
+            - Header=x-llm, ollama
           filters:
-            - StripPrefix=0
-            - AddMyCustomHeader
+            - name: LLMProxy
+              args:
+                model: ollama
+                temperature: 0.9
         - uri: http://localhost:9090
           predicates:
             - Path=/chat/**
-            - Header=x-llm, .*
+            - Header=x-llm, openai
           filters:
-            - LLMProxy
+            - name: LLMProxy
+              args:
+                model: openai
+                temperature: 0.9
+                APIKey:

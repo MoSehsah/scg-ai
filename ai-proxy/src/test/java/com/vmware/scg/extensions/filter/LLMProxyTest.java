@@ -42,34 +42,40 @@ class LLMProxyTest {
         wireMock.stop();
     }
 
+
     @Test
-    void shouldApplyExtensionFilter() {
-        String result = webTestClient.post()
+    void shouldCallOpenAI() {
+        webTestClient
+                .post()
+                .uri("/chat")
+                .header("x-llm", "openai")
+                .bodyValue("Tell me a joke!")
+                .exchange().expectStatus().isOk()
+                .returnResult(String.class).getResponseBody().subscribe(System.out::println);
+
+//        wireMock.verify(postRequestedFor(urlPathEqualTo("/chat")));
+    }
+
+    @Test
+    void shouldCallOllama() {
+        webTestClient
+                .post()
                 .uri("/chat")
                 .header("x-llm", "ollama")
                 .bodyValue("Tell me a joke!")
-                .exchange()
-                .expectStatus()
-                .isOk().returnResult(String.class).getResponseBody().map(String::toString).blockLast();
-        LOGGER.info(result);
+                .exchange().expectStatus().isOk()
+                .returnResult(String.class).getResponseBody().subscribe(System.out::println);
+
 //        wireMock.verify(postRequestedFor(urlPathEqualTo("/chat")));
     }
+
 
     @SpringBootApplication
     public static class GatewayApplication {
 
-        @Bean
-        public RouteLocator routes(RouteLocatorBuilder builder,
-                                   LLMProxyGatewayFilterFactory filterFactory) {
-            return builder.routes()
-                    .route("test_route", r -> r.path("/chat/**")
-                            .filters(f -> f.filters(filterFactory.apply(new LLMProxyGatewayFilterFactory.Config())))
-                            .uri("http://localhost:9090"))
-                    .build();
-        }
-
         public static void main(String[] args) {
             SpringApplication.run(GatewayApplication.class, args);
         }
+
     }
 }
